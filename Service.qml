@@ -11,25 +11,20 @@ Item {
   property var manifest: null
   property var shell: null
 
-  readonly property string pluginDir: manifest && manifest.__sourceDir ? String(manifest.__sourceDir) : ""
-  readonly property string collector: pluginDir + "/collect.py"
+  readonly property string collector: decodeURIComponent(String(Qt.resolvedUrl("collect.py")).replace(/^file:\/\//, ""))
   readonly property string home: Quickshell.env("HOME") || ""
   readonly property string stateHome: Quickshell.env("XDG_STATE_HOME") || (home + "/.local/state")
   readonly property string claudeRecord: stateHome + "/omarchy/agents/usage/claude.json"
 
   function collect(force) {
-    if (pluginDir === "" || collectProcess.running) return
+    if (collector === "" || collectProcess.running) return
     var cmd = ["python3", collector, "--write"]
     if (force === true) cmd.push("--force")
     collectProcess.command = cmd
     collectProcess.running = true
   }
 
-  function clearRecord() {
-    if (pluginDir === "") return
-    clearProcess.command = ["python3", collector, "--clear"]
-    clearProcess.running = true
-  }
+  Component.onCompleted: root.collect(false)
 
   Timer {
     interval: 300000
@@ -56,11 +51,4 @@ Item {
       onStreamFinished: if (text.trim() !== "") console.warn("antigravity-usage", text.trim())
     }
   }
-
-  Process {
-    id: clearProcess
-    running: false
-  }
-
-  Component.onDestruction: root.clearRecord()
 }

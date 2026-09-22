@@ -35,7 +35,10 @@ LOAD_CODE_ASSIST_URL = "https://daily-cloudcode-pa.googleapis.com/v1internal:loa
 EFFORT_SUFFIX = re.compile(r"\s*\((?:High|Medium|Low|Thinking)\)\s*$", re.IGNORECASE)
 GROUP_MODELS_MARKER = "Models within this group:"
 MODEL_SELECTION_RE = re.compile(
-    r"Model Selection` from (?:None|\w+) to ([\w\s\.\(\)-]+)\."
+    r"Model Selection` from .+? to ([\w\s\.\(\)-]+)\."
+)
+USER_SETTINGS_CHANGE_RE = re.compile(
+    r"<USER_SETTINGS_CHANGE>(.*?)</USER_SETTINGS_CHANGE>", re.DOTALL
 )
 TOKEN_STEP_TYPES = {"USER_INPUT", "PLANNER_RESPONSE", "GENERIC", "MODEL"}
 DAILY_LEDGER_KEEP_DAYS = 45
@@ -518,22 +521,85 @@ def collect_token_stats() -> dict[str, Any]:
   today_str = local_date_string()
 
   if brain_dir.is_dir():
-    for tpath in brain_dir.glob("*/.system_generated/logs/transcript.jsonl"):
-      conv_model = "unknown"
+    subagent_info: dict[str, tuple[str, int, str]] = {}
+    for sjson in brain_dir.glob("*/.system_generated/subagents/*.json"):
+      try:
+        sdata = json.loads(sjson.read_text(encoding="utf-8"))
+        scid = str(sdata.get("conversationId") or "")
+        if scid:
+          parent_id = sjson.parent.parent.parent.name
+          sidx = int(sdata.get("spawnStepIndex") or 0)
+          sdesc = sdata.get("subagentDescriptor") or {}
+          smodel = str(sdesc.get("Model") or "inherit")
+          subagent_info[scid] = (parent_id, sidx, smodel)
+      except Exception:
+        pass
+
+    conv_models: dict[str, list[tuple[int, str]]] = {}
+    transcripts = list(brain_dir.glob("*/.system_generated/logs/transcript.jsonl"))
+
+    for tpath in transcripts:
+      cid = tpath.parent.parent.parent.name
+      changes: list[tuple[int, str]] = []
       try:
         with tpath.open("r", encoding="utf-8", errors="replace") as handle:
           for line in handle:
-            match = MODEL_SELECTION_RE.search(line)
-            if match:
-              conv_model = model_slug(match.group(1))
             try:
               step = json.loads(line)
             except json.JSONDecodeError:
               continue
+            content = str(step.get("content") or "")
+            settings_change = USER_SETTINGS_CHANGE_RE.search(content)
+            if settings_change:
+              match = MODEL_SELECTION_RE.search(settings_change.group(1))
+              if match:
+                changes.append((int(step.get("step_index") or 0), model_slug(match.group(1))))
+      except Exception:
+        pass
+      if changes:
+        conv_models[cid] = changes
+
+    def resolve_initial_model(cid: str) -> str:
+      if cid in subagent_info:
+        parent_id, step_idx, m_arg = subagent_info[cid]
+        if m_arg and m_arg != "inherit":
+          if m_arg == "flash":
+            return "gemini-3-8-flash"
+          if m_arg == "flash_lite":
+            return "gemini-flash-lite"
+          if m_arg == "pro":
+            return "gemini-3-1-pro"
+          return model_slug(m_arg)
+        p_changes = conv_models.get(parent_id, [])
+        m = "unknown"
+        for c_idx, c_model in p_changes:
+          if c_idx <= step_idx:
+            m = c_model
+          else:
+            break
+        return m
+      changes = conv_models.get(cid, [])
+      return changes[0][1] if changes else "unknown"
+
+    for tpath in transcripts:
+      cid = tpath.parent.parent.parent.name
+      conv_model = resolve_initial_model(cid)
+      try:
+        with tpath.open("r", encoding="utf-8", errors="replace") as handle:
+          for line in handle:
+            try:
+              step = json.loads(line)
+            except json.JSONDecodeError:
+              continue
+            content = str(step.get("content") or "")
+            settings_change = USER_SETTINGS_CHANGE_RE.search(content)
+            if settings_change:
+              match = MODEL_SELECTION_RE.search(settings_change.group(1))
+              if match:
+                conv_model = model_slug(match.group(1))
             stype = str(step.get("type") or "")
             if stype not in TOKEN_STEP_TYPES:
               continue
-            content = str(step.get("content") or "")
             tokens = estimate_tokens(content)
             if tokens <= 0:
               continue
