@@ -9,7 +9,7 @@ After install, click the AI button on the bar. An **Antigravity** chip appears n
 ## Install
 
 ```sh
-omarchy plugin add https://github.com/gokivego/omarchy-antigravity-usage.git --enable
+omarchy plugin add https://github.com/nicodiaz101/omarchy-antigravity-usage.git --enable
 ```
 
 Requires:
