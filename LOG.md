@@ -3,6 +3,7 @@
 ## 2026-10-16
 
 - Update quota meter labels for Google Antigravity update: `Flash 3.8`, `Claude Opus y Sonnet`, and `Gemini 4 Argon`.
+- Scope TOKENS BY MODEL to the last 30 days of transcripts instead of all-time machine history.
 
 ## 2026-09-05
 

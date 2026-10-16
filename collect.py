@@ -42,6 +42,7 @@ USER_SETTINGS_CHANGE_RE = re.compile(
 )
 TOKEN_STEP_TYPES = {"USER_INPUT", "PLANNER_RESPONSE", "GENERIC", "MODEL"}
 DAILY_LEDGER_KEEP_DAYS = 45
+MODEL_USAGE_DAYS = 30
 
 
 def expand_path(value: str) -> Path:
@@ -535,7 +536,9 @@ def collect_token_stats() -> dict[str, Any]:
   model_usage: dict[str, dict[str, int]] = {}
   today_tokens_by_model: dict[str, int] = {}
   tokens_by_date: dict[str, int] = {}
-  today_str = local_date_string()
+  today = dt.datetime.now().date()
+  today_str = local_date_string(today)
+  model_usage_cutoff = local_date_string(today - dt.timedelta(days=MODEL_USAGE_DAYS))
 
   if brain_dir.is_dir():
     subagent_info: dict[str, tuple[str, int, str]] = {}
@@ -621,11 +624,12 @@ def collect_token_stats() -> dict[str, Any]:
             if tokens <= 0:
               continue
             day = local_date_from_iso(str(step.get("created_at") or "")) or today_str
-            bucket = model_usage.setdefault(conv_model, empty_bucket())
-            if stype == "USER_INPUT":
-              bucket["inputTokens"] += tokens
-            else:
-              bucket["outputTokens"] += tokens
+            if day >= model_usage_cutoff:
+              bucket = model_usage.setdefault(conv_model, empty_bucket())
+              if stype == "USER_INPUT":
+                bucket["inputTokens"] += tokens
+              else:
+                bucket["outputTokens"] += tokens
             tokens_by_date[day] = tokens_by_date.get(day, 0) + tokens
             if day == today_str:
               today_tokens_by_model[conv_model] = today_tokens_by_model.get(conv_model, 0) + tokens

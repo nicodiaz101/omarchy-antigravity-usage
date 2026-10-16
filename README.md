@@ -31,7 +31,7 @@ Plugins run unsandboxed inside `omarchy-shell`, with your user permissions. Read
 
 Quota rows come from `agy --print /usage`. The row names the pool class (`Flash 3.8`, `Claude Opus y Sonnet`, or `Gemini 4 Argon`). `agy models` still classifies new models into those pools. A new `/usage` group becomes a new set of rows.
 
-Antigravity does not publish tokens per day. `/usage` is only remaining quota. The TOKENS BY DAY chart is built from conversation transcripts: each step's `created_at` and the model selected at that step. The same walk fills TOKENS BY MODEL, so today's bar matches today's model split. Day totals are also stored in `~/.cache/omarchy/agent-usage/antigravity-daily.json` so a deleted transcript does not wipe an older day in the last 45 days.
+Antigravity does not publish tokens per day. `/usage` is only remaining quota. The TOKENS BY DAY chart is built from conversation transcripts: each step's `created_at` and the model selected at that step. The same walk fills TOKENS BY MODEL for the last 30 days (matching your monthly billing cycle). Day totals are also stored in `~/.cache/omarchy/agent-usage/antigravity-daily.json` so a deleted transcript does not wipe an older day in the last 45 days.
 
 The plan under the Antigravity name is `paidTier.name` from Cloud Code `loadCodeAssist`, the same field the AGY console shows, such as `Google AI Pro`. It is not inferred from which models you can see.
 
