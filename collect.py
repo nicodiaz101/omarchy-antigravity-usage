@@ -174,12 +174,14 @@ def pool_member_name(label: str) -> str:
   """
   family = family_label(label)
   lab = family.lower()
+  if "argon" in lab:
+    return "Gemini 4 Argon"
   if "flash" in lab:
-    return "Flash"
+    return "Flash 3.8"
   if "opus" in lab:
-    return "Opus"
+    return "Claude Opus"
   if "sonnet" in lab:
-    return "Sonnet"
+    return "Claude Sonnet"
   if "gpt" in lab or "oss" in lab:
     return "GPT-OSS"
   if re.search(r"\bpro\b", lab):
@@ -221,10 +223,14 @@ def model_matches_group(model: dict[str, str], group: dict[str, Any]) -> bool:
   lab = str(model.get("label") or "").lower()
   hay = f"{mid} {lab}"
 
+  if "argon" in name:
+    return "argon" in hay
   if "gemini" in name:
-    return "gemini" in hay
-  if "claude" in name or "gpt" in name:
-    return any(token in hay for token in ("claude", "gpt", "oss", "sonnet", "opus"))
+    return "gemini" in hay and "argon" not in hay
+  if "claude" in name:
+    return any(token in hay for token in ("claude", "sonnet", "opus"))
+  if "gpt" in name:
+    return any(token in hay for token in ("gpt", "oss"))
 
   for item in description_models(group):
     token = item.lower()
@@ -253,6 +259,21 @@ def pool_members_for_group(group: dict[str, Any], catalog: list[dict[str, str]])
   return members
 
 
+def group_display_name(group: dict[str, Any]) -> str:
+  name = str(group.get("name") or "").strip()
+  name_lower = name.lower()
+  bucket_ids = {str(b.get("id") or "").lower() for b in group.get("buckets", []) if isinstance(b, dict)}
+
+  if "argon" in name_lower or any("argon" in bid for bid in bucket_ids):
+    return "Gemini 4 Argon"
+  if "gemini" in name_lower or any("gemini" in bid for bid in bucket_ids):
+    return "Flash 3.8"
+  if "claude" in name_lower or any("3p" in bid for bid in bucket_ids):
+    return "Claude Opus y Sonnet"
+
+  return group_short_name(name)
+
+
 def limits_from_usage(data: dict[str, Any], catalog: list[dict[str, str]]) -> list[dict[str, Any]]:
   groups = data.get("command", {}).get("data", {}).get("groups")
   if not isinstance(groups, list):
@@ -262,9 +283,7 @@ def limits_from_usage(data: dict[str, Any], catalog: list[dict[str, str]]) -> li
   for group in groups:
     if not isinstance(group, dict):
       continue
-    short = group_short_name(str(group.get("name") or "Models"))
-    members = pool_members_for_group(group, catalog)
-    shared = " + ".join(members)
+    display_name = group_display_name(group)
     buckets = group.get("buckets")
     if not isinstance(buckets, list):
       continue
@@ -277,9 +296,7 @@ def limits_from_usage(data: dict[str, Any], catalog: list[dict[str, str]]) -> li
         remaining = 1.0
       used = max(0.0, min(1.0, 1.0 - remaining))
       window = window_word(bucket)
-      title = f"{short} {window}"
-      if shared:
-        title = f"{title} · {shared}"
+      title = f"{display_name} {window}"
       limits.append({
           "label": title,
           "title": title,
@@ -568,7 +585,7 @@ def collect_token_stats() -> dict[str, Any]:
           if m_arg == "flash_lite":
             return "gemini-flash-lite"
           if m_arg == "pro":
-            return "gemini-3-1-pro"
+            return "gemini-4-argon"
           return model_slug(m_arg)
         p_changes = conv_models.get(parent_id, [])
         m = "unknown"

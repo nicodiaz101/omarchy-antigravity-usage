@@ -1,5 +1,9 @@
 # Antigravity Usage log
 
+## 2026-10-16
+
+- Update quota meter labels for Google Antigravity update: `Flash 3.8`, `Claude Opus y Sonnet`, and `Gemini 4 Argon`.
+
 ## 2026-09-05
 
 - v1.2.0. Quota rows name the pool class (`Flash + Pro`, `Opus + Sonnet + GPT-OSS`) so stock `LimitRow` does not elide version lists.

@@ -2,7 +2,7 @@
 
 Adds Google Antigravity (`agy`) to Omarchy's existing AI toolbar widget. It does not add a second icon.
 
-After install, click the AI button on the bar. An **Antigravity** chip appears next to the other agents. The hero shows the plan from the AGY console. Limits are one meter per shared quota pool. The row names the pool class that shares it, such as Flash + Pro, not every versioned model.
+After install, click the AI button on the bar. An **Antigravity** chip appears next to the other agents. The hero shows the plan from the AGY console. Limits are one meter per shared quota pool. The row names the pool class that shares it, such as Flash 3.8, Claude Opus y Sonnet, or Gemini 4 Argon, not every versioned model.
 
 ![Antigravity in Omarchy's existing AI toolbar widget](preview.png)
 
@@ -29,7 +29,7 @@ Plugins run unsandboxed inside `omarchy-shell`, with your user permissions. Read
 - Switch to **Antigravity** with the chip in the panel, or middle-click the icon.
 - Press `r` or Enter in the panel to refresh. The collector also runs about every 5 minutes.
 
-Quota rows come from `agy --print /usage`. Each group is one weekly meter and one 5-hour meter. The stock panel truncates a long title instead of wrapping, so the row names the pool class (Flash + Pro, or Sonnet + Opus + GPT-OSS) rather than every 3.8/3.7/3.6 variant. `agy models` still classifies new models into those pools. A new `/usage` group becomes a new pair of rows.
+Quota rows come from `agy --print /usage`. The row names the pool class (`Flash 3.8`, `Claude Opus y Sonnet`, or `Gemini 4 Argon`). `agy models` still classifies new models into those pools. A new `/usage` group becomes a new set of rows.
 
 Antigravity does not publish tokens per day. `/usage` is only remaining quota. The TOKENS BY DAY chart is built from conversation transcripts: each step's `created_at` and the model selected at that step. The same walk fills TOKENS BY MODEL, so today's bar matches today's model split. Day totals are also stored in `~/.cache/omarchy/agent-usage/antigravity-daily.json` so a deleted transcript does not wipe an older day in the last 45 days.
 
