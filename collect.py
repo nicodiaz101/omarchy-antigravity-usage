@@ -32,7 +32,7 @@ AUTH_HELP = "Run `agy` in your terminal to authenticate."
 LIMITS_CACHE_SECONDS = 180.0
 MAX_HTTP_BODY_BYTES = 256 * 1024
 LOAD_CODE_ASSIST_URL = "https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist"
-EFFORT_SUFFIX = re.compile(r"\s*\((?:High|Medium|Low|Thinking)\)\s*$", re.IGNORECASE)
+EFFORT_SUFFIX = re.compile(r"\s*\((?:XHigh|High|Medium|Low|Thinking)\)\s*$", re.IGNORECASE)
 GROUP_MODELS_MARKER = "Models within this group:"
 MODEL_SELECTION_RE = re.compile(
     r"Model Selection` from .+? to ([\w\s\.\(\)-]+)\."
@@ -178,7 +178,7 @@ def pool_member_name(label: str) -> str:
   if "argon" in lab:
     return "Gemini 4 Argon"
   if "flash" in lab:
-    return "Flash 3.8"
+    return "Flash"
   if "opus" in lab:
     return "Claude Opus"
   if "sonnet" in lab:
@@ -228,10 +228,8 @@ def model_matches_group(model: dict[str, str], group: dict[str, Any]) -> bool:
     return "argon" in hay
   if "gemini" in name:
     return "gemini" in hay and "argon" not in hay
-  if "claude" in name:
-    return any(token in hay for token in ("claude", "sonnet", "opus"))
-  if "gpt" in name:
-    return any(token in hay for token in ("gpt", "oss"))
+  if "claude" in name or "gpt" in name or "openai" in name:
+    return any(token in hay for token in ("claude", "sonnet", "opus", "gpt", "oss", "openai"))
 
   for item in description_models(group):
     token = item.lower()
@@ -268,9 +266,14 @@ def group_display_name(group: dict[str, Any]) -> str:
   if "argon" in name_lower or any("argon" in bid for bid in bucket_ids):
     return "Gemini 4 Argon"
   if "gemini" in name_lower or any("gemini" in bid for bid in bucket_ids):
-    return "Flash 3.8"
-  if "claude" in name_lower or any("3p" in bid for bid in bucket_ids):
-    return "Claude Opus y Sonnet"
+    return "Gemini"
+  if (
+      "claude" in name_lower
+      or "gpt" in name_lower
+      or "openai" in name_lower
+      or any("3p" in bid for bid in bucket_ids)
+  ):
+    return "Claude y GPT"
 
   return group_short_name(name)
 

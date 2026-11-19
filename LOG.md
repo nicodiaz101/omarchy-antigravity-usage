@@ -1,5 +1,10 @@
 # Antigravity Usage log
 
+## 2026-11-19
+
+- Update quota meter labels: `Flash 3.8` -> `Gemini` and `Claude Opus y Sonnet` -> `Claude y GPT`.
+- Strip `(XHigh)` effort suffix in `EFFORT_SUFFIX` so `XHigh` usage merges into the base model in `TOKENS BY MODEL`.
+
 ## 2026-10-16
 
 - Update quota meter labels for Google Antigravity update: `Flash 3.8`, `Claude Opus y Sonnet`, and `Gemini 4 Argon`.
